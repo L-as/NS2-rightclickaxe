@@ -1,13 +1,6 @@
--- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
---
--- lua\Weapons\Marine\Welder.lua
---
---    Created by:   Andreas Urwalek (a_urwa@sbox.tugraz.at)
---
---    Weapon used for repairing structures and armor of friendly players (marines, exosuits, jetpackers).
---    Uses hud slot 3 (replaces axe)
---
--- ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- This file is a modification of the original file by Unknown Worlds Entertainment
+-- Only changes not done by UWE (visible by looking through git commits; first commit is original file unmodified by me)
+-- are subject to the license which covers the entire project (GPLv3).
 
 Script.Load("lua/Weapons/Weapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
