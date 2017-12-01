@@ -12,6 +12,18 @@ function Builder:GetIsDroppable()
 	return true
 end
 
+function Builder:GetSprintAllowed()
+	return true
+end
+
+function Builder:GetTryingToFire()
+	return false
+end
+
+function Welder:GetDeathIconIndex()
+	return kDeathMessageIcon.Welder
+end
+
 local EnableEffects, DisableEffects
 if Client then
 	EnableEffects  = function(self)
