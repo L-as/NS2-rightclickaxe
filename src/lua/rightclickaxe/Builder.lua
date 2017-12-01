@@ -21,7 +21,7 @@ if Client then
 	function Builder:OnConstructEnd()
 		self.playEffect = false
 	end
-else
+elseif Server then
 	function Builder:OnConstruct(target)
 		if not self.loopingFireSound:GetIsPlaying() then
 			self.loopingFireSound:Start()
@@ -31,6 +31,13 @@ else
 
 	function Builder:OnConstructEnd()
 		self.loopingFireSound:Stop()
+	end
+elseif Predict then
+	function Builder:OnConstruct(target)
+		target:Construct(kUseInterval, self:GetParent())
+	end
+
+	function Builder:OnConstructEnd()
 	end
 end
 
