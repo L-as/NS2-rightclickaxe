@@ -8,7 +8,7 @@ Builder.kModelName = PrecacheAsset("models/marine/welder/builder.model")
 local kViewModels	  = GenerateMarineViewModelPaths("welder")
 local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animation_graph")
 
-local kRange			   = 1.4
+local kRange			   = 2.4
 local kBuildEffectInterval = 0.2
 
 local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/welder/scan")
@@ -111,7 +111,7 @@ function Builder:OnPrimaryAttack(player)
 	local coords = player:GetViewCoords()
 	local target = Shared.TraceRay(
 		coords.origin,
-		coords.origin + coords.zAxis * 100,
+		coords.origin + coords.zAxis * kRange,
 		CollisionRep.Default,
 		PhysicsMask.Bullets,
 		EntityFilterTwo(player, self)
