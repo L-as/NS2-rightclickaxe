@@ -12,36 +12,41 @@ function Builder:GetIsDroppable()
 	return true
 end
 
+local EnableEffects, DisableEffects
 if Client then
-	function Builder:OnConstruct(target)
+	EnableEffects  = function(self)
 		self.playEffect = true
-		target:Construct(kUseInterval, self:GetParent())
 	end
-
-	function Builder:OnConstructEnd()
+	DisableEffects = function(self)
 		self.playEffect = false
 	end
 elseif Server then
-	function Builder:OnConstruct(target)
+	EnableEffects  = function(self)
 		if not self.loopingFireSound:GetIsPlaying() then
 			self.loopingFireSound:Start()
 		end
-		target:Construct(kUseInterval, self:GetParent())
 	end
+	DisableEffects = function(self)
+		if self.loopingFireSound:GetIsPlaying() then
+			self.loopingFireSound:Stop()
+		end
+	end
+else
+	EnableEffects  = function() end
+	DisableEffects = function() end
+end
 
-	function Builder:OnConstructEnd()
-		self.loopingFireSound:Stop()
-	end
-elseif Predict then
-	function Builder:OnConstruct(target)
-		target:Construct(kUseInterval, self:GetParent())
-	end
+function Builder:OnConstruct(target)
+	EnableEffects(self)
+	target:Construct(kUseInterval, self:GetParent())
+end
 
-	function Builder:OnConstructEnd()
-	end
+function Builder:OnConstructEnd()
+	DisableEffects(self)
 end
 
 function Builder:OnPrimaryAttack(player)
+	EnableEffects(self)
 	local coords = player:GetViewCoords()
 	local target = Shared.TraceRay(
 		coords.origin,
