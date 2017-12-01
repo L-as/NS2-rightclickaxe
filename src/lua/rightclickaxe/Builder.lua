@@ -20,7 +20,7 @@ function Builder:GetTryingToFire()
 	return false
 end
 
-function Welder:GetDeathIconIndex()
+function Builder:GetDeathIconIndex()
 	return kDeathMessageIcon.Welder
 end
 
