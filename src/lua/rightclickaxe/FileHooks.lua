@@ -1,2 +1,8 @@
-ModLoader.SetupFileHook("lua/Weapons/Marine/Builder.lua", "lua/rightclickaxe/Builder.lua", "post")
-ModLoader.SetupFileHook("lua/Weapons/Marine/Welder.lua",  "lua/rightclickaxe/Welder.lua",  "post")
+
+for _, v in ipairs {
+	"Builder",
+	"Axe",
+	"Welder"
+} do
+	ModLoader.SetupFileHook("lua/Weapons/Marine/" .. v .. ".lua", "lua/rightclickaxe/" .. v .. ".lua", "post")
+end
