@@ -1,4 +1,4 @@
-function Marine:GetCanConstruct(target)
+function Marine:GetCanConstructTarget(target)
 	return target and HasMixin(target, "Construct")
 		and ( target:GetCanConstruct(self) or (target.CanBeWeldedByBuilder and target:CanBeWeldedByBuilder()) )
 		and not
@@ -8,7 +8,7 @@ function Marine:GetCanConstruct(target)
 end
 
 function Marine:OnUseTarget(target)
-	if self:GetCanConstruct(target) then
+	if self:GetCanConstructTarget(target) then
 		if self.weaponBeforeUseId == Entity.invalidId  then
 			self.weaponBeforeUseId = self:GetActiveWeapon():GetId()
 		end

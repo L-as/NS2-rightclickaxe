@@ -52,9 +52,10 @@ function Builder:OnPrimaryAttack(player)
 		coords.origin,
 		coords.origin + coords.zAxis * 100,
 		CollisionRep.Default,
-		PhysicsMask.Bullets
+		PhysicsMask.Bullets,
+		EntityFilterTwo(player, self)
 	).entity
-	if player:GetCanConstruct(target) then
+	if player:GetCanConstructTarget(target) then
 		self:OnConstruct(target)
 	end
 end
