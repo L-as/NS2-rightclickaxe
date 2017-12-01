@@ -3,7 +3,8 @@ Script.Load "lua/Weapons/Weapon.lua"
 class 'Builder' (Weapon)
 
 Builder.kMapName   = "builder"
-Builder.kModelName = PrecacheAsset("models/marine/welder/builder.model")
+Builder.kModelName = PrecacheAsset "models/marine/welder/builder.model"
+Builder.kSound     = PrecacheAsset "sound/NS2.fev/marine/welder/scan"
 
 local kViewModels	  = GenerateMarineViewModelPaths("welder")
 local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animation_graph")
@@ -11,34 +12,29 @@ local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animatio
 local kRange			   = 2.4
 local kBuildEffectInterval = 0.2
 
-local kFireLoopingSound = PrecacheAsset("sound/NS2.fev/marine/welder/scan")
-
 if Server then
 	function Builder:OnCreate()
 		Weapon.OnCreate(self)
 
 		self.loopingFireSound = Server.CreateEntity(SoundEffect.kMapName)
-		self.loopingFireSound:SetAsset(kFireLoopingSound)
+		self.loopingFireSound:SetAsset(self.kSound)
 		self.loopingFireSound:SetParent(self)
-		self.loopingSoundEntId = self.loopingFireSound:GetId()
-	end
-elseif Client then
-	function Builder:OnCreate()
-		Weapon.OnCreate(self)
-
-		self.lastBuilderEffect = 0
 	end
 end
 
 function Builder:OnInitialized()
 	Weapon.OnInitialized(self)
 
-	self:SetAnimationInput("activity",	 "primary")
+	self:SetModel(self.kModelName)
+
 	self:SetAnimationInput("welder",	 false)
 	self:SetAnimationInput("needWelder", false)
 	self:SetPoseParam("welder", 0)
 
-	self:SetModel(self.kModelName)
+	if Client then
+		self.lastBuilderEffect = 0
+		self.playEffect        = false
+	end
 end
 
 function Builder:OverrideWeaponName()
@@ -73,41 +69,46 @@ function Builder:GetDeathIconIndex()
 	return kDeathMessageIcon.Welder
 end
 
-local EnableEffects, DisableEffects
 if Client then
-	EnableEffects  = function(self)
+	function Builder:EnableEffects()
 		self.playEffect = true
 	end
-	DisableEffects = function(self)
+	function Builder:DisableEffects()
 		self.playEffect = false
 	end
 elseif Server then
-	EnableEffects  = function(self)
+	function Builder:EnableEffects()
 		if not self.loopingFireSound:GetIsPlaying() then
 			self.loopingFireSound:Start()
 		end
 	end
-	DisableEffects = function(self)
+	function Builder:DisableEffects()
 		if self.loopingFireSound:GetIsPlaying() then
 			self.loopingFireSound:Stop()
 		end
 	end
 else
-	EnableEffects  = function() end
-	DisableEffects = function() end
+	function Builder:EnableEffects() end
+	function Builder:DisableEffects() end
+end
+
+function Builder:GetBuildRate()
+	return kUseInterval
 end
 
 function Builder:OnConstruct(target)
-	EnableEffects(self)
-	target:Construct(kUseInterval, self:GetParent())
+	self:EnableEffects()
+	target:Construct(self:GetBuildRate(), self:GetParent())
 end
 
 function Builder:OnConstructEnd()
-	DisableEffects(self)
+	self:DisableEffects()
 end
 
 function Builder:OnPrimaryAttack(player)
-	EnableEffects(self)
+	PROFILE("Builder:OnPrimaryAttack")
+
+	self:EnableEffects()
 	local coords = player:GetViewCoords()
 	local target = Shared.TraceRay(
 		coords.origin,
@@ -135,18 +136,26 @@ if Server then
 	function Builder:OnHolster(player)
 		Weapon.OnHolster(self, player)
 
-		DisableEffects(self)
+		self:DisableEffects()
 	end
 elseif Client then
 	function Builder:OnHolsterClient()
 		Weapon.OnHolsterClient(self)
 
-		DisableEffects(self)
+		self:DisableEffects()
 	end
 end
 
 function Builder:UpdateViewModelPoseParameters(viewModel)
 	viewModel:SetPoseParam("welder", 0)
+end
+
+if Client then
+	function Builder:OnUpdateAnimationInput()
+		PROFILE("Welder:OnUpdateAnimationInput")
+
+		self:SetAnimationInput("activity", self.playEffect and "primary" or "none")
+	end
 end
 
 local kCinematicName	 = PrecacheAsset("cinematics/marine/builder/builder_scan.cinematic")
@@ -173,5 +182,10 @@ if Client then
 		return { xSize = 512, ySize = 512, script = "lua/GUIWelderDisplay.lua", textureNameOverride = "welder" }
 	end
 end
+
+function Builder:GetIsAffectedByWeaponUpgrades()
+	return false
+end
+
 
 Shared.LinkClassToMap("Builder", Builder.kMapName, {})
