@@ -1,24 +1,34 @@
+gModClassMap.Axe.networkVars.sprintAllowed = nil
+
 function Axe:GetHUDSlot()
 	return 0 -- no slot
 end
 
 function Axe:OnUpdateAnimationInput()
-	PROFILE("Axe:OnUpdateAnimationInput")
-
-	local activity = "none"
-	if self.primaryAttacking then
-		activity = "primary"
-	end
 	self:SetAnimationInput("activity", self.primaryAttacking and "primary" or "none")
-end
-
-local old = Axe.OnInitialized
-function Axe:OnInitialized()
-	old(self)
-
 	self:SetAnimationInput("idleName", "idle")
 end
 
-function Axe:GetIsDroppable()
-	return false
+function Axe:OnPrimaryAttack(player)
+	self.primaryAttacking = true
 end
+
+function Axe:OnPrimaryAttackEnd(player)
+	self.primaryAttacking = false
+end
+
+function Axe:OnTag(tagName)
+	if tagName == "swipe_sound" then
+		local player = self:GetParent()
+		if player then
+			player:TriggerEffects("axe_attack")
+		end
+	elseif tagName == "hit" then
+		local player = self:GetParent()
+		if player then
+			AttackMeleeCapsule(self, player, kAxeDamage, self:GetRange())
+		end
+	end
+end
+
+Axe.GetSprintAllowed = Weapon.GetSprintAllowed
