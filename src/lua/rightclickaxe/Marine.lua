@@ -25,7 +25,6 @@ end
 
 function Marine:OnUseEnd()
 	if self.prev_weapon_before_build then
-		Shared.Message "Switching back!"
 		if self:GetActiveWeapon():isa "Builder" then
 			self:GetActiveWeapon():ConstructTargetEnd(target)
 		end
