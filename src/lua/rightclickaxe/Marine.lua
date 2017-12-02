@@ -60,10 +60,10 @@ end
 
 -- Allow weapons to replace other weapons
 function Marine:AddWeapon(weapon)
-    local replacement = weapon.GetReplacementWeaponMapName and weapon:GetReplacementWeaponMapName()
-    local obsoleteWep = replacement and self:GetWeapon(replacement)
-    if obsoleteWep then
-        self:RemoveWeapon(obsoleteWep)
-        DestroyEntity(obsoleteWep)
-    end
+	local replacement = weapon.GetReplacementWeaponMapName and weapon:GetReplacementWeaponMapName()
+	local obsoleteWep = replacement and self:GetWeapon(replacement)
+	if obsoleteWep then
+		self:RemoveWeapon(obsoleteWep)
+		DestroyEntity(obsoleteWep)
+	end
 end

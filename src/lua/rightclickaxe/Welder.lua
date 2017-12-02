@@ -20,7 +20,7 @@ local networkVars = {}
 AddMixinNetworkVars(LiveMixin, networkVars)
 
 local kWelderEffectRate = 0.45
-local kRange            = 2.4
+local kRange			= 2.4
 
 Welder.kHealScoreAdded = 1
 -- Every kAmountHealedForPoints points of damage healed, the player gets
@@ -179,9 +179,9 @@ function Welder:OnUpdateRender()
 			EntityFilterTwo(player, self)
 		)
 		if trace.fraction == 1 then return end
-		local target    = trace.entity
-		local endPoint  = trace.endPoint
-		local zAxis     = coords.zAxis
+		local target	= trace.entity
+		local endPoint	= trace.endPoint
+		local zAxis		= coords.zAxis
 		local classname = target and target:GetClassName()
 		self:TriggerEffects("welder_hit", {
 			classname = classname,

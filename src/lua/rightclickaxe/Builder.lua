@@ -4,7 +4,7 @@ class 'Builder' (Weapon)
 
 Builder.kMapName   = "builder"
 Builder.kModelName = PrecacheAsset "models/marine/welder/builder.model"
-Builder.kSound     = PrecacheAsset "sound/NS2.fev/marine/welder/scan"
+Builder.kSound	   = PrecacheAsset "sound/NS2.fev/marine/welder/scan"
 
 local kViewModels	  = GenerateMarineViewModelPaths("welder")
 local kAnimationGraph = PrecacheAsset("models/marine/welder/welder_view.animation_graph")
