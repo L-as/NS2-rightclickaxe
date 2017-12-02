@@ -1,10 +1,12 @@
 # About
 
-This mod makes right-click an attack with the axe, when marine.
-This applies to **all** marine weapons, and thus you should always be able to quickly defend
-yourself against a near enemy.
+This mod is an overhaul of how welders, builders, and axes work.
 
-The third slot is no longer used by the axe, but instead only by the welder, and also the **builder**. The builder is the weapon you have before the welder, which you use to build (but not weld) stuff.
+# Changes
+- Right click is now always axe (no rifle bash)
+- 3rd slot is either builder or welder
+- Score gained for welding is increased
+- Target selection for welding and building has been greatly simplified
 
 #Future changes
 
