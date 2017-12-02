@@ -27,13 +27,11 @@ function Builder:OnInitialized()
 
 	self:SetModel(self.kModelName)
 
-	self:SetAnimationInput("welder",	 false)
-	self:SetAnimationInput("needWelder", false)
-	self:SetPoseParam("welder", 0)
+	self.last_build_time = 0
+	self.play_effect = false
 
 	if Client then
 		self.lastBuilderEffect = 0
-		self.playEffect        = false
 	end
 end
 
@@ -53,10 +51,6 @@ function Builder:GetHUDSlot()
 	return 3
 end
 
-function Builder:GetIsDroppable()
-	return true
-end
-
 function Builder:GetSprintAllowed()
 	return true
 end
@@ -69,61 +63,77 @@ function Builder:GetDeathIconIndex()
 	return kDeathMessageIcon.Welder
 end
 
-if Client then
+if Server then
+	function Builder:EnableEffects()
+		self.playEffect = true
+		if not self.loopingFireSound:GetIsPlaying() then
+			self.loopingFireSound:Start()
+		end
+	end
+	function Builder:DisableEffects()
+		self.playEffect = false
+		if self.loopingFireSound:GetIsPlaying() then
+			self.loopingFireSound:Stop()
+		end
+	end
+else
 	function Builder:EnableEffects()
 		self.playEffect = true
 	end
 	function Builder:DisableEffects()
 		self.playEffect = false
 	end
-elseif Server then
-	function Builder:EnableEffects()
-		if not self.loopingFireSound:GetIsPlaying() then
-			self.loopingFireSound:Start()
-		end
-	end
-	function Builder:DisableEffects()
-		if self.loopingFireSound:GetIsPlaying() then
-			self.loopingFireSound:Stop()
-		end
-	end
-else
-	function Builder:EnableEffects() end
-	function Builder:DisableEffects() end
 end
 
 function Builder:GetBuildRate()
 	return kUseInterval
 end
 
-function Builder:OnConstruct(target)
+function Builder:ConstructTarget(target)
+	PROFILE("Builder:ConstructTarget")
+
 	self:EnableEffects()
-	target:Construct(self:GetBuildRate(), self:GetParent())
+
+	local now = Shared.GetTime()
+	if now - self.last_build_time < self:GetBuildRate() then return end
+	self.last_build_time = now
+
+	local endPoint
+	if not target then
+		local player = self:GetParent()
+		local coords = player:GetViewCoords()
+		local trace  = Shared.TraceRay(
+			coords.origin,
+			coords.origin + coords.zAxis * kRange,
+			CollisionRep.Default,
+			PhysicsMask.Bullets,
+			EntityFilterTwo(player, self)
+		)
+		target = trace.entity
+		endPoint = trace.fraction ~= 1 and trace.endPoint or nil
+	end
+
+	if not target then return end
+	self:OnConstructTarget(target, endPoint)
 end
 
-function Builder:OnConstructEnd()
+function Builder:ConstructTargetEnd()
 	self:DisableEffects()
 end
 
-function Builder:OnPrimaryAttack(player)
-	PROFILE("Builder:OnPrimaryAttack")
-
-	self:EnableEffects()
-	local coords = player:GetViewCoords()
-	local target = Shared.TraceRay(
-		coords.origin,
-		coords.origin + coords.zAxis * kRange,
-		CollisionRep.Default,
-		PhysicsMask.Bullets,
-		EntityFilterTwo(player, self)
-	).entity
+function Builder:OnConstructTarget(target, endPoint)
+	local player = self:GetParent()
 	if player:GetCanConstructTarget(target) then
-		self:OnConstruct(target)
+		target:Construct(kUseInterval, self:GetParent())
 	end
 end
 
+function Builder:OnPrimaryAttack(player)
+	self:ConstructTarget()
+end
+
 function Builder:OnPrimaryAttackEnd()
-	self:OnConstructEnd()
+	self:ConstructTargetEnd()
 end
 
 function Builder:OnDraw(player, previousWeaponMapName)
@@ -150,12 +160,13 @@ function Builder:UpdateViewModelPoseParameters(viewModel)
 	viewModel:SetPoseParam("welder", 0)
 end
 
-if Client then
-	function Builder:OnUpdateAnimationInput()
-		PROFILE("Welder:OnUpdateAnimationInput")
+function Builder:OnUpdateAnimationInput()
+	PROFILE("Builder:OnUpdateAnimationInput")
 
-		self:SetAnimationInput("activity", self.playEffect and "primary" or "none")
-	end
+	self:SetAnimationInput("activity", self.playEffect and "primary" or "none")
+	self:SetAnimationInput("welder",	 false)
+	self:SetAnimationInput("needWelder", false)
+	self:SetPoseParam("welder", 0)
 end
 
 local kCinematicName	 = PrecacheAsset("cinematics/marine/builder/builder_scan.cinematic")
@@ -169,11 +180,9 @@ function Builder:OnUpdateRender()
 		self.ammoDisplayUI:SetGlobal("weldPercentage", progress)
 	end
 
-	if self.playEffect then
-		if self.lastBuilderEffect + kBuildEffectInterval <= Shared.GetTime() then
-			CreateMuzzleCinematic(self, kCinematicName, kCinematicName, kMuzzleAttachPoint)
-			self.lastBuilderEffect = Shared.GetTime()
-		end
+	if self.playEffect and self.lastBuilderEffect + kBuildEffectInterval <= Shared.GetTime() then
+		self.lastBuilderEffect = Shared.GetTime()
+		CreateMuzzleCinematic(self, kCinematicName, kCinematicName, kMuzzleAttachPoint)
 	end
 end
 
@@ -186,6 +195,5 @@ end
 function Builder:GetIsAffectedByWeaponUpgrades()
 	return false
 end
-
 
 Shared.LinkClassToMap("Builder", Builder.kMapName, {})

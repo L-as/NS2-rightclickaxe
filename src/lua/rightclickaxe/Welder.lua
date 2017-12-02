@@ -20,6 +20,7 @@ local networkVars = {}
 AddMixinNetworkVars(LiveMixin, networkVars)
 
 local kWelderEffectRate = 0.45
+local kRange            = 2.4
 
 Welder.kHealScoreAdded = 1
 -- Every kAmountHealedForPoints points of damage healed, the player gets
@@ -33,6 +34,8 @@ function Welder:OnCreate()
 	InitMixin(self, PickupableWeaponMixin)
 	InitMixin(self, LiveMixin)
 
+	self.last_muzzle = 0
+
 	if Client then
 		self.welder_not_attached = true
 	end
@@ -42,20 +45,13 @@ if Client then
 	function Welder:OnInitialized()
 		Builder.OnInitialized(self)
 
-		self:SetAnimationInput("needWelder", true)
-		self:SetAnimationInput("welder", not self.welder_not_attached)
-
 		self.last_muzzle = 0
 	end
 end
 
-function Welder:GetBuildRate()
-	return kWelderFireDelay
-end
-
 function Welder:EnableEffects()
 	if not self:GetIsWelding() then
-        self:TriggerEffects("welder_start")
+		self:TriggerEffects("welder_start")
 	end
 
 	Builder.EnableEffects(self)
@@ -73,42 +69,30 @@ function Welder:DisableEffects()
 	self:TriggerEffects("welder_end")
 end
 
-function Welder:OnPrimaryAttack(player)
-	PROFILE("Welder:OnPrimaryAttack")
+function Welder:GetBuildRate()
+	return kWelderFireDelay
+end
 
-	self:EnableEffects()
-	local coords = player:GetViewCoords()
-	local trace = Shared.TraceRay(
-		coords.origin,
-		coords.origin + coords.zAxis * kRange,
-		CollisionRep.Default,
-		PhysicsMask.Bullets,
-		EntityFilterTwo(player, self)
-	)
-	local target = trace.entity
-	if trace.fraction ~= 1 then
-		if target == nil then
-			self:TriggerEffects("welder_hit", { effecthostcoords = Coords.GetTranslation(trace.endPoint - coords.zAxis * .1) })
-		else
-			self:TriggerEffects("welder_hit", { classname = target:GetClassName(), effecthostcoords = Coords.GetTranslation(trace.endPoint - coords.zAxis * .1) })
-		end
-	end
+function Welder:OnConstructTarget(target, endPoint)
+	local zAxis = self:GetParent():GetViewCoords().zAxis
+
+	local player = self:GetParent()
 
 	if player:GetCanConstructTarget(target) then
-		self:OnConstruct(target)
+		target:Construct(kWelderFireDelay, player)
 	elseif GetAreEnemies(player, target) then
-		self:DoDamage(kWelderDamagePerSecond * self:GetBuildRate(), target, trace.endPoint, coords.zAxis)
+		self:DoDamage(kWelderDamagePerSecond * kWelderFireDelay, target, endPoint, zAxis)
 	else
 		local prevHealth = target:GetHealth()
 		local prevArmor = target:GetArmor()
-		target:OnWeld(self, self:GetBuildRate(), player)
+		target:OnWeld(self, kWelderFireDelay, player)
 		player:AddContinuousScore(
 			"WeldHealth",
 			target:GetHealth() + target:GetArmor() - prevHealth - prevArmor,
 			target:isa "Player" and Welder.kAmountHealedForPointsPlayers or Welder.kAmountHealedForPoints,
 			Welder.kHealScoreAdded
 		)
-		player:SetArmor(player:GetArmor() + self:GetBuildRate() * kSelfWeldAmount)
+		player:SetArmor(player:GetArmor() + kWelderFireDelay * kSelfWeldAmount)
 	end
 end
 
@@ -134,6 +118,13 @@ end
 
 function Welder:OnUpdatePoseParameters(viewModel)
 	self:SetPoseParam("welder", 1)
+end
+
+function Welder:OnUpdateAnimationInput()
+	self:SetAnimationInput("activity", self.playEffect and "primary" or "none")
+	self:SetAnimationInput("needWelder", true)
+	--self:SetAnimationInput("welder", not self.welder_not_attached)
+	self:SetAnimationInput("welder", false)
 end
 
 function Welder:ModifyDamageTaken(damageTable, attacker, doer, damageType)
@@ -162,15 +153,52 @@ end
 
 function Welder:OnTag(tagName)
 	if tagName == "welderAdded" then
-		self:SetAnimationInput("welder", true)
+		self.welder_not_attached = false
 	end
+end
+
+function Welder:OnUpdateRender()
+	Weapon.OnUpdateRender(self)
+
+	if self.ammoDisplayUI then
+		local progress = PlayerUI_GetUnitStatusPercentage()
+		self.ammoDisplayUI:SetGlobal("weldPercentage", progress)
+	end
+
+	local time = Shared.GetTime()
+	if self.playEffect and time - self.lastBuilderEffect > 0.06 then
+		self.lastBuilderEffect = time
+
+		local player = self:GetParent()
+		local coords = player:GetViewCoords()
+		local trace  = Shared.TraceRay(
+			coords.origin,
+			coords.origin + coords.zAxis * 2.4,
+			CollisionRep.Default,
+			PhysicsMask.Bullets,
+			EntityFilterTwo(player, self)
+		)
+		if trace.fraction == 1 then return end
+		local target    = trace.entity
+		local endPoint  = trace.endPoint
+		local zAxis     = coords.zAxis
+		local classname = target and target:GetClassName()
+		self:TriggerEffects("welder_hit", {
+			classname = classname,
+			effecthostcoords = Coords.GetTranslation(endPoint - zAxis * .1)
+		})
+	end
+end
+
+function Welder:GetIsDroppable()
+	return true
 end
 
 --[[ Does welder_holster even exist?
 function Welder:OnHolster(player)
 	Builder.OnHolster(self, player)
 
-    self:TriggerEffects("welder_holster")
+	self:TriggerEffects("welder_holster")
 end
 --]]
 
