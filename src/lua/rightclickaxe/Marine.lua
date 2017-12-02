@@ -66,3 +66,19 @@ function Marine:AddWeapon(weapon)
 		DestroyEntity(obsoleteWep)
 	end
 end
+
+function Marine:SecondaryAttack()
+	if not self.prev_weapon_before_axe then
+		self.prev_weapon_before_axe = self:GetActiveWeapon():GetMapName()
+	end
+
+	self:SetActiveWeapon(Axe.kMapName, true)
+	local axe = self:GetActiveWeapon()
+	axe:OnPrimaryAttack(self)
+end
+
+function Marine:SecondaryAttackEnd()
+	self:GetActiveWeapon():OnPrimaryAttackEnd()
+	self:SetActiveWeapon(self.prev_weapon_before_axe, true)
+	self.prev_weapon_before_axe = nil
+end
