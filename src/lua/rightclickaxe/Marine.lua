@@ -74,11 +74,10 @@ function Marine:SecondaryAttack()
 
 	self:SetActiveWeapon(Axe.kMapName, true)
 	local axe = self:GetActiveWeapon()
+	assert(axe:isa "Axe")
 	axe:OnPrimaryAttack(self)
 end
 
 function Marine:SecondaryAttackEnd()
-	self:GetActiveWeapon():OnPrimaryAttackEnd()
-	self:SetActiveWeapon(self.prev_weapon_before_axe, true)
 	self.prev_weapon_before_axe = nil
 end

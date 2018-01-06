@@ -1,12 +1,19 @@
 gModClassMap.Axe.networkVars.sprintAllowed = nil
 
+local kAnimationGraph = PrecacheAsset "lua/rightclickaxe/axe_view.animation_graph"
+
 function Axe:GetHUDSlot()
 	return 0 -- no slot
 end
 
-function Axe:OnUpdateAnimationInput()
-	self:SetAnimationInput("activity", self.primaryAttacking and "primary" or "none")
-	self:SetAnimationInput("idleName", "idle")
+function Axe:OnUpdateAnimationInput(modelMixin)
+	PROFILE("Axe:OnUpdateAnimationInput")
+
+	modelMixin:SetAnimationInput("activity", self.primaryAttacking and "primary" or "none")
+end
+
+function Axe:GetAnimationGraphName()
+    return kAnimationGraph
 end
 
 function Axe:OnPrimaryAttack(player)
